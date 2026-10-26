@@ -36,8 +36,57 @@ TOOLS = [
                 "additionalProperties": False,
             },
         },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "write_file",
+            "description": "Write file at path location containing content specified",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "path": {"type": "string"},
+                    "content": {"type": "string"}
+                    },
+                "required": ["path", "content"],
+                "additionalProperties": True,
+            },
+        },
     }
 ]
+
+
+def print_exchange(step, messages, response):
+    divider = "=" * 60
+    print(f"\n{divider}")
+    print(f"STEP {step}")
+    print(divider)
+
+    print("\n--- REQUEST (last message sent) ---")
+    last = messages[-1]
+    print(f"Role:    {last['role']}")
+    print(f"Content: {last.get('content', '(none)')}")
+
+    print("\n--- FULL MESSAGE HISTORY ---")
+    for i, msg in enumerate(messages):
+        role = msg["role"].upper()
+        content = msg.get("content") or "(no content)"
+        tool_calls = msg.get("tool_calls")
+        print(f"  [{i}] {role}: {content[:120]}")
+        if tool_calls:
+            for tc in tool_calls:
+                print(f"       tool_call → {tc['function']['name']}({tc['function']['arguments']})")
+
+    print("\n--- RESPONSE FROM MODEL ---")
+    print(f"Content:    {response.get('content', '(none)')}")
+    tool_calls = response.get("tool_calls") or []
+    if tool_calls:
+        print(f"Tool calls requested: {len(tool_calls)}")
+        for tc in tool_calls:
+            print(f"  → {tc['function']['name']}({tc['function']['arguments']})")
+    else:
+        print("No tool calls — final answer.")
+    print(divider)
 
 
 def project_path(project, path):
@@ -65,6 +114,13 @@ def read_file(project, path):
     return project_path(project, path).read_text(encoding="utf-8")
 
 
+def write_file(project, path, content):
+    file_path = project_path(project, path)
+    with open(file_path, 'w', encoding='utf-8') as file:
+        file.write(content)
+    return file_path
+
+
 def execute_tool(project, name, arguments):
     # Match the requested name to a Python function.
     try:
@@ -73,10 +129,14 @@ def execute_tool(project, name, arguments):
             if not isinstance(args, dict) or set(args) != {"path"}:
                 raise ValueError("read_file expects exactly one argument: path")
             return read_file(project, args["path"])
-        if name == "list_files":
+        elif name == "list_files":
             if not isinstance(args, dict) or set(args) != {"path"}:
                 raise ValueError("list_file expects exactly one argument: path")
             return list_files(project, args["path"])
+        elif name == "write_file":
+            if not isinstance(args, dict) or set(args) != {"path"}:
+                raise ValueError("write_file expects exactly one argument: path")
+            return write_file(project, args["path", "content"])
         raise ValueError(f"Unknown tool: {name}")
     except (ValueError, TypeError, OSError) as error:
         # The model receives errors too, so it can correct its request.
@@ -129,6 +189,7 @@ def main():
     for step in range(1, args.max_steps + 1):
         print(f"\n--- Model request {step} ---", flush=True)
         message = ask_model(args.base_url, args.model, messages)
+        print_exchange(step, messages, message)
         calls = message.get("tool_calls") or []
         # The API expects tool requests before their results in the history.
         assistant = {"role": "assistant", "content": message.get("content")}
