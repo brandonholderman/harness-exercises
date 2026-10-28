@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug harness",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/../harness-exercises/harness/harness.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--project",
+                "${workspaceFolder}",
+                "Write file hello.md with content 'Hello World' to project root"
+            ]
+        }
+    ]
+}

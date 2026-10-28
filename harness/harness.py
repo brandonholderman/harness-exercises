@@ -49,7 +49,7 @@ TOOLS = [
                     "content": {"type": "string"}
                     },
                 "required": ["path", "content"],
-                "additionalProperties": True,
+                "additionalProperties": False,
             },
         },
     }
@@ -134,9 +134,9 @@ def execute_tool(project, name, arguments):
                 raise ValueError("list_file expects exactly one argument: path")
             return list_files(project, args["path"])
         elif name == "write_file":
-            if not isinstance(args, dict) or set(args) != {"path"}:
-                raise ValueError("write_file expects exactly one argument: path")
-            return write_file(project, args["path", "content"])
+            if not isinstance(args, dict) or set(args) != {"path", "content"}:
+                raise ValueError("write_file expects arguments: path and content")
+            return write_file(project, args["path"], args["content"])
         raise ValueError(f"Unknown tool: {name}")
     except (ValueError, TypeError, OSError) as error:
         # The model receives errors too, so it can correct its request.
