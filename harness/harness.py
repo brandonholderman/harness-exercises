@@ -57,6 +57,7 @@ TOOLS = [
 
 
 def print_exchange(step, messages, response):
+    # wrote by claude
     divider = "=" * 60
     print(f"\n{divider}")
     print(f"STEP {step}")
